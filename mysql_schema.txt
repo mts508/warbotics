@@ -1,0 +1,14 @@
+CREATE DATABASE IF NOT EXISTS Evos;
+USE Evos;
+
+CREATE TABLE IF NOT EXISTS Users(
+    AccountId INT PRIMARY KEY AUTO_INCREMENT,
+    UserName VARCHAR(32) UNIQUE,
+    LastSelectedCharacter TINYINT,
+    SelectedTitleId SMALLINT,
+    BannerForegroundId SMALLINT,
+    BannerBackgroundId SMALLINT,
+    RibbonId SMALLINT
+);
+
+CREATE TABLE IF NOT EXISTS FriendList(AccountID_1 INT, AccountID_2 INT, FriendStatus TINYINT, PRIMARY KEY (AccountID_1, AccountID_2))
