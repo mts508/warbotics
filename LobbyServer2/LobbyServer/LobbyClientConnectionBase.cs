@@ -22,15 +22,17 @@ using WebSocketSharp.Server;
 
 namespace Warbotic.LobbyServer
 {
-    public class LobbyServerProtocolBase : WebSocketBehavior
+    public class LobbyClientConnectionBase : WebSocketBehavior
     {
-        private Dictionary<Type, EvosMessageDelegate<WebSocketMessage>> messageHandlers = new Dictionary<Type, EvosMessageDelegate<WebSocketMessage>>();
+        private Dictionary<Type, LobbyMessage<WebSocketMessage>> messageHandlers = new Dictionary<Type, LobbyMessage<WebSocketMessage>>();
         public long AccountId;
         public long SessionToken;
         public string UserName;
-        
+
         public GameType SelectedGameType;
         public ushort SelectedSubTypeMask;
+        public LobbySessionInfo LobbySessionInfo;
+        public LobbyPlayerInfo LobbyPlayerInfo;
 
 
         protected override void OnMessage(MessageEventArgs e)
@@ -49,26 +51,23 @@ namespace Warbotic.LobbyServer
 
             if (deserialized != null)
             {
-                EvosMessageDelegate<WebSocketMessage> handler = GetHandler(deserialized.GetType());
-                if (handler != null)
-                {
-                    EvoS.Framework.Logging.Log.Print(LogType.Network, "Received " + deserialized.GetType().Name);
-                    handler.Invoke(deserialized);
-                }
-                else
+                LobbyMessage<WebSocketMessage> eventHandler = GetHandler(deserialized.GetType());
+                if (eventHandler == null)
                 {
                     EvoS.Framework.Logging.Log.Print(LogType.Error, "No handler for " + deserialized.GetType().Name + "\n" + Newtonsoft.Json.JsonConvert.SerializeObject(deserialized, Newtonsoft.Json.Formatting.Indented));
+                    return;
                 }
+                EvoS.Framework.Logging.Log.Print(LogType.Network, "Received " + deserialized.GetType().Name);
+                eventHandler.Invoke(this, deserialized);
             }
         }
 
-        public void RegisterHandler<T>(EvosMessageDelegate<T> handler) where T : WebSocketMessage
+        public void RegisterHandler<T>(LobbyMessage<T> handler) where T : WebSocketMessage
         {
-            EvoS.Framework.Logging.Log.Print(LogType.Debug, $"Registering handler for {typeof(T).Name}");
-            messageHandlers.Add(typeof(T), msg => { handler((T)msg); });
+            messageHandlers.Add(typeof(T), (LobbyClientConnectionBase client, WebSocketMessage msg)=> { handler(client, (T)msg); });
         }
 
-        private EvosMessageDelegate<WebSocketMessage> GetHandler(Type type)
+        private LobbyMessage<WebSocketMessage> GetHandler(Type type)
         {
             try
             {
@@ -77,6 +76,7 @@ namespace Warbotic.LobbyServer
             catch (KeyNotFoundException e)
             {
                 EvoS.Framework.Logging.Log.Print(LogType.Lobby, "No handler found for type " + type.Name);
+                
                 return null;
             }
         }
@@ -107,6 +107,7 @@ namespace Warbotic.LobbyServer
             Send(response);
         }
 
+        // TODO: MOVE
         public void SendLobbyServerReadyNotification()
         {
             LobbyServerReadyNotification notification = new LobbyServerReadyNotification()
@@ -127,6 +128,7 @@ namespace Warbotic.LobbyServer
             Send(notification);
         }
 
+        // TODO: MOVE
         private ServerQueueConfigurationUpdateNotification GetServerQueueConfigurationUpdateNotification()
         {
             return new ServerQueueConfigurationUpdateNotification
@@ -139,6 +141,7 @@ namespace Warbotic.LobbyServer
             };
         }
 
+        // TODO: MOVE
         private LobbyStatusNotification GetLobbyStatusNotification()
         {
             return new LobbyStatusNotification
@@ -155,6 +158,7 @@ namespace Warbotic.LobbyServer
             };
         }
 
+        // TODO: MOVE
         private ServerMessageOverrides GetServerMessageOverrides()
         {
             return new ServerMessageOverrides
@@ -167,6 +171,7 @@ namespace Warbotic.LobbyServer
             };
         }
 
+        // TODO: MOVE
         public LobbyGameplayOverrides GetGameplayOverrides()
         {
             return new LobbyGameplayOverrides

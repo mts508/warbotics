@@ -11,15 +11,20 @@ namespace Warbotic
         {
             Banner.PrintBanner();
 
-            WebSocketServer server = new WebSocketServer(6060);
-            server.AddWebSocketService<LobbyServer.LobbyServerService>("/LobbyGameClientSessionManager");
-            server.AddWebSocketService<BridgeServer.BridgeServerProtocol>("/BridgeServer");
-            server.Log.Level = LogLevel.Debug;
-
+            // Directory Server
             Thread t = new Thread(() => DirectoryServer.DirectoryServer.RunServer());
             t.Start();
 
+            WebSocketServer server = new WebSocketServer(6060);
 
+            // Lobby
+            server.AddWebSocketService<LobbyServer.LobbyClientConnection>("/LobbyGameClientSessionManager");
+
+            // Bridge
+            server.AddWebSocketService<BridgeServer.BridgeServerProtocol>("/BridgeServer");
+
+
+            server.Log.Level = LogLevel.Debug;
             server.Start();
             Console.WriteLine("Lobby server started");
             Console.ReadLine();

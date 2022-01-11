@@ -12,7 +12,7 @@ namespace Warbotic.LobbyServer.Group
         public static LobbyPlayerGroupInfo GetGroupInfo(long accountId)
         {
             // TODO
-            LobbyServerService client = SessionManager.GetClientConnection(accountId);
+            LobbyClientConnection client = SessionManager.GetClientConnection(accountId);
 
             LobbyPlayerGroupInfo groupInfo = new LobbyPlayerGroupInfo()
             {

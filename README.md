@@ -1,10 +1,9 @@
-## EvoS
-
-### Information
+## Warbotics
 An emulator for the Atlas Reactor game.
 
+
+
 ### Requirements
- * Visual Studio 2019 (.NET Core 2.2 and C# 7.3 support required)
+ * Visual Studio 2022 (.NET Core 3.1)
  
-### Links
- * [Discord](https://discord.gg/RVnCQ7U)
+

@@ -29,7 +29,7 @@ namespace Warbotic.LobbyServer.Friend
             return friendList;
         }
 
-        public static PlayerUpdateStatusResponse OnPlayerUpdateStatusRequest(LobbyServerService client, PlayerUpdateStatusRequest request)
+        public static PlayerUpdateStatusResponse OnPlayerUpdateStatusRequest(LobbyClientConnection client, PlayerUpdateStatusRequest request)
         {
             // TODO: notify this client's friends the status change
 

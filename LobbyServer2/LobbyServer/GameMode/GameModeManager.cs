@@ -109,9 +109,9 @@ namespace Warbotic.LobbyServer.Gamemode
                     GameMapConfigs = new List<GameMapConfig>{ new GameMapConfig(Maps.VR_Practice, true) },
                     RewardBucket = GameBalanceVars.GameRewardBucketType.NoRewards,
                     PersistedStatBucket = PersistedStatBucket.DoNotPersist,
-                    TeamAPlayers = 1,
+                    TeamAPlayers = 4,
                     TeamABots = 0,
-                    TeamBPlayers = 1,
+                    TeamBPlayers = 4,
                     TeamBBots = 0,
                     Mods = new List<GameSubType.SubTypeMods>
                     {

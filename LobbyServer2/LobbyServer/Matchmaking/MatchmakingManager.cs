@@ -27,7 +27,7 @@ namespace Warbotic.LobbyServer.Matchmaking
         {
             // TODO
         }
-        public static void StartPractice(LobbyServerProtocolBase client)
+        public static void StartPractice(LobbyClientConnectionBase client)
         {
             LobbyGameInfo practiceGameInfo = new LobbyGameInfo
             {

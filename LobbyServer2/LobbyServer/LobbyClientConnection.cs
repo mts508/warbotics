@@ -11,30 +11,40 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using WebSocketSharp;
+using Warbotic.LobbyServer.Queue;
 
 namespace Warbotic.LobbyServer
 {
-    public class LobbyServerService : LobbyServerProtocolBase
+    public class LobbyClientConnection : LobbyClientConnectionBase
     {
+        
+
+
         /// <summary>
         /// Register all the callbacks that will handle client requests
         /// </summary>
         protected override void OnOpen()
         {
-            RegisterHandler(new EvosMessageDelegate<RegisterGameClientRequest>(HandleRegisterGame));
-            RegisterHandler(new EvosMessageDelegate<OptionsNotification>(HandleOptionsNotification));
-            RegisterHandler(new EvosMessageDelegate<CustomKeyBindNotification>(HandleCustomKeyBindNotification));
-            RegisterHandler(new EvosMessageDelegate<PricesRequest>(HandlePricesRequest));
-            RegisterHandler(new EvosMessageDelegate<PlayerUpdateStatusRequest>(HandlePlayerUpdateStatusRequest));
-            RegisterHandler(new EvosMessageDelegate<PlayerMatchDataRequest>(HandlePlayerMatchDataRequest));
-            RegisterHandler(new EvosMessageDelegate<SetGameSubTypeRequest>(HandleSetGameSubTypeRequest));
-            RegisterHandler(new EvosMessageDelegate<PlayerInfoUpdateRequest>(HandlePlayerInfoUpdateRequest));
-            RegisterHandler(new EvosMessageDelegate<CheckAccountStatusRequest>(HandleCheckAccountStatusRequest));
-            RegisterHandler(new EvosMessageDelegate<CheckRAFStatusRequest>(HandleCheckRAFStatusRequest));
-            RegisterHandler(new EvosMessageDelegate<ClientErrorSummary>(HandleClientErrorSummary));
-            RegisterHandler(new EvosMessageDelegate<PreviousGameInfoRequest>(HandlePreviousGameInfoRequest));
-            RegisterHandler(new EvosMessageDelegate<PurchaseTintRequest>(HandlePurchaseTintRequest));
-            RegisterHandler(new EvosMessageDelegate<JoinMatchmakingQueueRequest>(HandleJoinMatchMakingQueueRequest));
+            
+            // Called when a player connects to the lobby
+            RegisterHandler<RegisterGameClientRequest>(HandleRegisterGame);
+
+
+            RegisterHandler<OptionsNotification>(HandleOptionsNotification);
+            RegisterHandler<CustomKeyBindNotification>(HandleCustomKeyBindNotification);
+            RegisterHandler<PricesRequest>(HandlePricesRequest);
+            RegisterHandler<PlayerUpdateStatusRequest>(HandlePlayerUpdateStatusRequest);
+            RegisterHandler<PlayerMatchDataRequest>(HandlePlayerMatchDataRequest);
+            RegisterHandler<SetGameSubTypeRequest>(HandleSetGameSubTypeRequest);
+            RegisterHandler<PlayerInfoUpdateRequest>(HandlePlayerInfoUpdateRequest);
+            RegisterHandler<CheckAccountStatusRequest>(HandleCheckAccountStatusRequest);
+            RegisterHandler<CheckRAFStatusRequest>(HandleCheckRAFStatusRequest);
+            RegisterHandler<ClientErrorSummary>(HandleClientErrorSummary);
+            RegisterHandler<PreviousGameInfoRequest>(HandlePreviousGameInfoRequest);
+            RegisterHandler<PurchaseTintRequest>(HandlePurchaseTintRequest);
+
+            // Called when a player clicks the 'Ready' button to join the queue for a match
+            RegisterHandler<JoinMatchmakingQueueRequest>(HandleJoinMatchMakingQueueRequest);
 
             /*
             RegisterHandler(new EvosMessageDelegate<PurchaseModResponse>(HandlePurchaseModRequest));
@@ -57,7 +67,7 @@ namespace Warbotic.LobbyServer
             }
         }
 
-        public void HandleRegisterGame(RegisterGameClientRequest request)
+        public void HandleRegisterGame(LobbyClientConnectionBase connection, RegisterGameClientRequest request)
         {
             try
             {
@@ -88,16 +98,16 @@ namespace Warbotic.LobbyServer
             }
         }
 
-        public void HandleOptionsNotification(OptionsNotification notification) {}
-        public void HandleCustomKeyBindNotification(CustomKeyBindNotification notification) { }
-        public void HandlePricesRequest(PricesRequest request)
+        public void HandleOptionsNotification(LobbyClientConnectionBase connection, OptionsNotification notification) {}
+        public void HandleCustomKeyBindNotification(LobbyClientConnectionBase connection, CustomKeyBindNotification notification) { }
+        public void HandlePricesRequest(LobbyClientConnectionBase connection, PricesRequest request)
         {
             PricesResponse response = StoreManager.GetPricesResponse();
             response.ResponseId = request.RequestId;
             Send(response);
         }
 
-        public void HandlePlayerUpdateStatusRequest(PlayerUpdateStatusRequest request)
+        public void HandlePlayerUpdateStatusRequest(LobbyClientConnectionBase connection, PlayerUpdateStatusRequest request)
         {
             EvoS.Framework.Logging.Log.Print(LogType.Lobby, $"{this.UserName} is now {request.StatusString}");
             PlayerUpdateStatusResponse response = FriendManager.OnPlayerUpdateStatusRequest(this, request);
@@ -105,7 +115,7 @@ namespace Warbotic.LobbyServer
             Send(response);
         }
 
-        public void HandlePlayerMatchDataRequest(PlayerMatchDataRequest request)
+        public void HandlePlayerMatchDataRequest(LobbyClientConnectionBase connection, PlayerMatchDataRequest request)
         {
             PlayerMatchDataResponse response = new PlayerMatchDataResponse()
             {
@@ -116,14 +126,14 @@ namespace Warbotic.LobbyServer
             Send(response);
         }
 
-        public void HandleSetGameSubTypeRequest(SetGameSubTypeRequest request)
+        public void HandleSetGameSubTypeRequest(LobbyClientConnectionBase connection, SetGameSubTypeRequest request)
         {
             this.SelectedSubTypeMask = request.SubTypeMask;
             SetGameSubTypeResponse response = new SetGameSubTypeResponse() { ResponseId = request.RequestId };
             Send(response);
         }
 
-        public void HandlePlayerInfoUpdateRequest(PlayerInfoUpdateRequest request)
+        public void HandlePlayerInfoUpdateRequest(LobbyClientConnectionBase connection, PlayerInfoUpdateRequest request)
         {
             LobbyPlayerInfoUpdate playerInfoUpdate = request.PlayerInfoUpdate;
             
@@ -173,9 +183,12 @@ namespace Warbotic.LobbyServer
                 SetCharacterMods(playerInfoUpdate.CharacterMods.Value);
             if (playerInfoUpdate.CharacterSkin!= null && playerInfoUpdate.CharacterSkin.HasValue)
                 SetCharacterSkin(playerInfoUpdate.CharacterSkin.Value);
-            
+
             if (playerInfoUpdate.ContextualReadyState != null && playerInfoUpdate.ContextualReadyState.HasValue)
+            {
                 SetContextualReadyState(playerInfoUpdate.ContextualReadyState.Value);
+                SendErrorResponse(new PlayerInfoUpdateResponse(), request.RequestId, "Practice Mode Not Allowed!");
+            }
             if (playerInfoUpdate.EnemyDifficulty != null && playerInfoUpdate.EnemyDifficulty.HasValue)
                 SetEnemyDifficulty(playerInfoUpdate.EnemyDifficulty.Value);
             if (playerInfoUpdate.LastSelectedLoadout != null && playerInfoUpdate.LastSelectedLoadout.HasValue)
@@ -184,7 +197,7 @@ namespace Warbotic.LobbyServer
             //Console.WriteLine(JsonConvert.SerializeObject(response, Formatting.Indented));
         }
 
-        public void HandleCheckAccountStatusRequest(CheckAccountStatusRequest request)
+        public void HandleCheckAccountStatusRequest(LobbyClientConnectionBase connection, CheckAccountStatusRequest request)
         {
             CheckAccountStatusResponse response = new CheckAccountStatusResponse()
             {
@@ -194,7 +207,7 @@ namespace Warbotic.LobbyServer
             Send(response);
         }
 
-        public void HandleCheckRAFStatusRequest(CheckRAFStatusRequest request)
+        public void HandleCheckRAFStatusRequest(LobbyClientConnectionBase connection, CheckRAFStatusRequest request)
         {
             CheckRAFStatusResponse response = new CheckRAFStatusResponse()
             {
@@ -204,11 +217,11 @@ namespace Warbotic.LobbyServer
             Send(response);
         }
 
-        public void HandleClientErrorSummary(ClientErrorSummary request)
+        public void HandleClientErrorSummary(LobbyClientConnectionBase connection, ClientErrorSummary request)
         {
         }
 
-        public void HandlePreviousGameInfoRequest(PreviousGameInfoRequest request)
+        public void HandlePreviousGameInfoRequest(LobbyClientConnectionBase connection, PreviousGameInfoRequest request)
         {
             PreviousGameInfoResponse response = new PreviousGameInfoResponse()
             {
@@ -218,7 +231,7 @@ namespace Warbotic.LobbyServer
             Send(response);
         }
 
-        public void HandlePurchaseTintRequest(PurchaseTintRequest request)
+        public void HandlePurchaseTintRequest(LobbyClientConnectionBase connection, PurchaseTintRequest request)
         {
             Console.WriteLine("PurchaseTintRequest " + JsonConvert.SerializeObject(request));
 
@@ -239,8 +252,9 @@ namespace Warbotic.LobbyServer
             sk.Save();
         }
 
-        public void HandleJoinMatchMakingQueueRequest(JoinMatchmakingQueueRequest request)
+        public void HandleJoinMatchMakingQueueRequest(LobbyClientConnectionBase connection, JoinMatchmakingQueueRequest request)
         {
+            LobbyQueueManager.GetQueue(request.GameType).AddPlayer(this);
             JoinMatchmakingQueueResponse response = new JoinMatchmakingQueueResponse()
             {
                 LocalizedFailure = null,

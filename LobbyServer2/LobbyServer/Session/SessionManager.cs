@@ -13,11 +13,11 @@ namespace Warbotic.LobbyServer.Session
     {
         private static Dictionary<long, LobbyPlayerInfo> ActivePlayers = new Dictionary<long, LobbyPlayerInfo>();// key: AccountID
         private static Dictionary<long, long> SessionTokenAccountIDCache = new Dictionary<long, long>(); // key: SessionToken, value: AccountID
-        private static Dictionary<long, LobbyServerService> ActiveConnections = new Dictionary<long, LobbyServerService>();
+        private static Dictionary<long, LobbyClientConnection> ActiveConnections = new Dictionary<long, LobbyClientConnection>();
         private static long GeneratedSessionToken = 0;
 
 
-        public static LobbyPlayerInfo OnPlayerConnect(LobbyServerService client, RegisterGameClientRequest clientRequest)
+        public static LobbyPlayerInfo OnPlayerConnect(LobbyClientConnection client, RegisterGameClientRequest clientRequest)
         {
             long sessionToken = GeneratedSessionToken++;
             Database.Account user = Database.Account.GetByUserName(clientRequest.AuthInfo.Handle);
@@ -57,7 +57,7 @@ namespace Warbotic.LobbyServer.Session
             return playerInfo;
         }
 
-        public static void OnPlayerDisconnect(LobbyServerService client)
+        public static void OnPlayerDisconnect(LobbyClientConnection client)
         {
             ActivePlayers.Remove(client.AccountId);
             SessionTokenAccountIDCache.Remove(client.SessionToken);
@@ -82,9 +82,9 @@ namespace Warbotic.LobbyServer.Session
             return 0;
         }
 
-        public static LobbyServerService GetClientConnection(long accountId)
+        public static LobbyClientConnection GetClientConnection(long accountId)
         {
-            LobbyServerService clientConnection = null;
+            LobbyClientConnection clientConnection = null;
             ActiveConnections.TryGetValue(accountId, out clientConnection);
             return clientConnection;
         }
